@@ -27,6 +27,7 @@ To run this locally,
 - Add the token from the Bot page to the `BOT_TOKEN` environment variable.
 ```bash
 export BOT_TOKEN=[bot token]
+export OPENAI_API_KEY=[open ai token]
 ```
 - Invite your bot to your test server via https://discord.com/oauth2/authorize?client_id={CLIENT_ID}&permissions=432114318432&scope=bot, where the client id is found in your General Information page.
 
