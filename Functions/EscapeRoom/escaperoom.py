@@ -106,6 +106,7 @@ class EscapeRoom(commands.Cog):
     @commands.command()
     async def wungusfoodtour(self, ctx):
         conditions = [False] * 4
+        print("hai")
         message = await ctx.send(FOOD_TOUR_INTRO_MESSAGE)
         while not all(condition for condition in conditions):
             conditions = await wait_for_reactions_on_message(message, self.bot, conditions)
