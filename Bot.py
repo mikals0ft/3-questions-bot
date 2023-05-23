@@ -1,12 +1,12 @@
-import os
+import asyncio
+from collections import defaultdict
 import os.path
 import random
 
 import interactions
 import openai
-from interactions import autodefer
 from interactions import ActionRow, Button, SelectMenu, SelectOption
-import asyncio
+from typing import Dict, List, Set, Tuple
 
 # Set up OpenAI
 MODEL = 'gpt-3-5-turbo-discord'
@@ -46,14 +46,13 @@ async def questionbank(ctx: interactions.CommandContext, num_questions: int):
     if num_questions > 10:
         await ctx.send('Cannot output more than 10 questions from question bank')
     else:
-        top_n_questions = '\n'.join(random.sample(questions, num_questions))
+        top_n_questions = '\n'.join(random.sample(question_bank, num_questions))
         await ctx.send(top_n_questions)
 
 
 @bot.command(
     name='openai_test', description='Calls OpenAi to generate questions',
 )
-@autodefer()
 async def openai_test(ctx: interactions.CommandContext):
     await ctx.defer()
     prompt = {
@@ -107,16 +106,16 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
     if friend3:
         guess_who_answered_friends.append(str(friend3))
     friends_str = ", ".join(guess_who_answered_friends)
-    
+
     guess_who_answered_participants = len(guess_who_answered_friends) + 1
-    
+
     global guess_who_answered_answers
     guess_who_answered_answers = []
     global guess_who_answered_votes
     guess_who_answered_votes = [0, 0, 0]
     global users_who_voted_already
     users_who_voted_already = []
-    
+
     global guess_who_answered_questions
     guess_who_answered_questions = random.sample(question_bank, 3)
     line1 = "Hey {}! {} has invited you to play Guess Who Answered!\n\n".format(friends_str, ctx.author.mention)
@@ -124,8 +123,8 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
     line3 = "Vote on a question to answer:\n"
     line4 = " :one: {} \n :two: {} \n :three: {}\n".format(guess_who_answered_questions[0], guess_who_answered_questions[1], guess_who_answered_questions[2])
     line5 = "You have {} seconds to vote...\n".format(30)
-    
-    
+
+
     s1 = SelectMenu(
         custom_id="voting_menu",
         placeholder = "Select a question to vote for",
@@ -136,13 +135,13 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
         ],
     )
     await ctx.send(line1+line2+line3+line4+line5, components=ActionRow.new(s1))
-    
+
     await asyncio.sleep(30)
-    
+
     index = guess_who_answered_votes.index(max(guess_who_answered_votes))
     chosen_question = guess_who_answered_questions[index]
 
-    b1 = Button(style=1, custom_id="b1", label="press me")    
+    b1 = Button(style=1, custom_id="b1", label="press me")
     await ctx.send("The chosen question was: " + chosen_question + "\n Press this button to answer:", components=ActionRow.new(b1))
 
 @bot.component("b1")
@@ -189,5 +188,84 @@ async def modal_response(ctx, response: str):
         await ctx.send("Everyone answered, the answers were: " +  ", ".join(guess_who_answered_answers))
     else:
         await ctx.send(line1+line2+line3, ephemeral=True)
+
+########################## VoteWho ###########################
+#### GLOBAL VARIABLES ####
+vwqf = open(os.path.dirname(__file__) + '/vote_who.txt')
+vote_who_questions = vwqf.readlines()
+vote_who_members: Set[interactions.Member] = set()
+vote_who_scores: Dict[str, int] = defaultdict(lambda: 0)
+vote_who_mappings: Dict[interactions.Snowflake, str] = {}
+vote_who_answers: Dict[Tuple[interactions.Snowflake, str], int] = defaultdict(lambda: 0)
+
+
+@bot.command(
+    name='votewhoadd', description='Add user to Vote Who game',
+    options=[
+        interactions.Option(
+            name='member',
+            description='users to add to the game',
+            type=interactions.OptionType.MENTIONABLE,
+            required=True,
+        ),
+    ],
+)
+async def votewhoadd(ctx: interactions.CommandContext, member: interactions.Member):
+    vote_who_members.add(member)
+    await ctx.send(f"Added <@{member.user.id}> to the game")
+
+
+@bot.component("vote_who")
+async def vote_who_response(ctx, response):
+    user = response[0]
+    vote_who_scores[user] += 1
+    vote_who_answers[(ctx.message.id, user)] += 1
+    await ctx.message.delete()
+
+
+@bot.command(
+    name='votewhostartround', description='Start a round of the Vote Who game',
+)
+async def votewhostartround(ctx: interactions.CommandContext):
+    n = len(vote_who_members)
+    if n > 10:
+        await ctx.send("Cannot play with more than 10 people")
+    else:
+        questions = random.sample(vote_who_questions, n)
+        await ctx.send("You have 30 seconds to vote for each question!")
+        for question in questions:
+            message = await ctx.send(
+                components=interactions.SelectMenu(custom_id="vote_who", placeholder=question, options=[interactions.SelectOption(label=member.user.username, value=member.user.username) for member in vote_who_members])
+            )
+            vote_who_mappings[message.id] = question
+        await asyncio.sleep(20)
+        await ctx.send("You have 10 seconds left to vote for each question!")
+        await asyncio.sleep(10)
+
+        vote_who_dict: Dict[interactions.Snowflake, List[str]] = defaultdict(lambda: [])
+        for (q, u), c in vote_who_answers.items():
+            vote_who_dict[q].append(f"{u} - {c}")
+        vote_who_list: List[Tuple[interactions.Snowflake, str]] = [(q, ','.join(scores)) for q, scores in vote_who_dict.items()]
+
+        vote_who_answers_formatted = '\n'.join([f"{vote_who_mappings[q]}: {a}" for q, a in vote_who_list])
+        vote_who_scores_formatted = '\n'.join([f"{u}: {s}" for u, s in vote_who_scores.items()])
+        await ctx.send(f"Here were the answers to each question \n {vote_who_answers_formatted}")
+        await ctx.send(f"Here are the scores for each player so far \n {vote_who_scores_formatted}")
+
+        vote_who_mappings.clear()
+        vote_who_answers.clear()
+
+
+@bot.command(
+    name='votewhoendgame', description='End the Vote Who game and report the scores',
+)
+async def votewhoendgame(ctx: interactions.CommandContext):
+    vote_who_scores_formatted = '\n'.join([f"{u}: {s}" for u, s in vote_who_scores.items()])
+    await ctx.send(f"Game over! Here were the scores for each player \n {vote_who_scores_formatted}")
+
+    vote_who_members.clear()
+    vote_who_scores.clear()
+    vote_who_mappings.clear()
+    vote_who_answers.clear()
 
 bot.start()
