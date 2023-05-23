@@ -63,8 +63,6 @@ class ThreeQuestions(commands.Cog):
                     embed=embed,
                     view=SelectView(options=[discord.SelectOption(label=member.display_name, value=member.display_name) for member in members])
                 )
-            for question in questions:
-                await ctx.send(question)
     
     @commands.command()
     async def question(self, ctx):

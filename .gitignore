@@ -1,1 +1,9 @@
 venv
+.idea
+__pycache__/
+Functions/*/__pycache__/
+/.env
+/venv/
+/.idea/
+/database.ini
+token.pickle
