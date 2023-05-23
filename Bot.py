@@ -24,7 +24,7 @@ openai_response = openai.ChatCompletion.create(model=MODEL, temperature=0, messa
 openai_result = openai_response.choices[0].message.content
 
 @bot.command(
-    name='hello_command', description='Just prints "hello"!', scope=1110296888953032837,
+    name='hello_command', description='Just prints "hello"!',
 )
 async def hello(ctx: interactions.CommandContext):
     await ctx.send('Hello World')
@@ -33,7 +33,6 @@ async def hello(ctx: interactions.CommandContext):
 @bot.command(
     name='questionbank',
     description='Prints up to 10 questions from the bank',
-    scope=1110296888953032837,
     options=[
         interactions.Option(
             name='num_questions',
@@ -52,7 +51,7 @@ async def questionbank(ctx: interactions.CommandContext, num_questions: int):
 
 
 @bot.command(
-    name='openai_test', description='Calls OpenAi to generate questions', scope=1110296888953032837,
+    name='openai_test', description='Calls OpenAi to generate questions',
 )
 @autodefer()
 async def openai_test(ctx: interactions.CommandContext):
