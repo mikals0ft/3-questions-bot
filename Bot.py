@@ -52,7 +52,7 @@ async def openai_test(ctx: interactions.CommandContext):
         'role': 'user',
         'content': 'Generate 10 question for friends in a Discord server who already know each other well. The questions are funny and quirky. The questions should be answerable in 1-3 open-ended words. They are outputted in numbered list.',
     }
-    openai_response = openai.ChatCompletion.create(model=MODEL, temperature=0, messages=[prompt])
+    openai_response = openai.ChatCompletion.create(model=MODEL, temperature=1.0, messages=[prompt])
     openai_result = openai_response.choices[0].message.content
     await ctx.send(openai_result)
 
