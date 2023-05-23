@@ -106,9 +106,9 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
     if friend3:
         guess_who_answered_friends.append(str(friend3))
     friends_str = ", ".join(guess_who_answered_friends)
-
-    guess_who_answered_participants = len(guess_who_answered_friends) + 1
-
+    
+    guess_who_answered_participants = len(set(guess_who_answered_friends + [ctx.author.mention]))
+    
     global guess_who_answered_answers
     guess_who_answered_answers = []
     global guess_who_answered_votes
@@ -122,9 +122,9 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
     line2 = "How well do YOU know your friends? :thinking:\n\n"
     line3 = "Vote on a question to answer:\n"
     line4 = " :one: {} \n :two: {} \n :three: {}\n".format(guess_who_answered_questions[0], guess_who_answered_questions[1], guess_who_answered_questions[2])
-    line5 = "You have {} seconds to vote...\n".format(30)
-
-
+    line5 = "You have up to {} seconds to vote...\n".format(30)
+    
+    
     s1 = SelectMenu(
         custom_id="voting_menu",
         placeholder = "Select a question to vote for",
@@ -135,14 +135,70 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ""
         ],
     )
     await ctx.send(line1+line2+line3+line4+line5, components=ActionRow.new(s1))
-
-    await asyncio.sleep(30)
+    
+    # Wait until all participants have voted or it's been 30 seconds.
+    i = 0
+    while (len(users_who_voted_already) < guess_who_answered_participants and i < 6):
+        await asyncio.sleep(5)
+        i += 1
+    if i == 6:
+        prefix = "Time is up! \n\n"
+    else:
+        prefix = "Everyone voted! \n\n"
 
     index = guess_who_answered_votes.index(max(guess_who_answered_votes))
     chosen_question = guess_who_answered_questions[index]
 
-    b1 = Button(style=1, custom_id="b1", label="press me")
-    await ctx.send("The chosen question was: " + chosen_question + "\n Press this button to answer:", components=ActionRow.new(b1))
+    b1 = Button(style=1, custom_id="b1", label="press me")    
+    await ctx.send(prefix + "**The chosen question was:** " + chosen_question + "\nYou have up to 60 seconds to answer! \n\nPress this button to answer:", components=ActionRow.new(b1))
+    
+    i = 0
+    while (len(guess_who_answered_answers) < guess_who_answered_participants and i < 12):
+        await asyncio.sleep(5)
+        i += 1
+    if i == 12:
+        line1 = "Time is up! \n"
+    else:
+        line1 = "Everyone answered! \n"
+    line2 = "Now, can you guess who gave each answer? :mag: \n\n"
+    
+    users = [t[0] for t in guess_who_answered_answers]
+    answers = [t[1] for t in guess_who_answered_answers]
+    random.shuffle(users)
+    random.shuffle(answers)
+
+    line3 = "The answers:\n - " +'\n- '.join(answers)
+    line4 = "\n\nPeople who answered:\n- " + '\n- '.join(users)
+    await ctx.send(line1 + line2 + line3 + line4)
+
+    
+    menus = []
+    for answer in answers:
+        options=[]
+        the_user = ""
+        for user in users:
+            if answer == guess_who_answered_answers[users.index(user)][1]:
+                options.append(SelectOption(label=user, value="correct"))
+                the_user = user
+            else:
+                options.append(SelectOption(label=user, value="incorrect"))
+
+        if (ctx.author.name == the_user):
+            print("here")
+            continue
+        s1 = SelectMenu(
+        custom_id="guessing_menu",
+        placeholder = 'Who wrote: "' + answer + '"?',
+        options=options,
+        )
+        await ctx.send(answer, components=ActionRow.new(s1))
+
+@bot.component("guessing_menu")
+async def guessing_menu_response(ctx, response):
+    if (response[0] == "correct"):
+        await ctx.send(ctx.author.mention + " answered correctly! :white_check_mark:")
+    else:
+        await ctx.send(ctx.author.mention + " answered incorrectly! :red_square:")
 
 @bot.component("b1")
 async def b1_response(ctx):
@@ -158,7 +214,7 @@ async def b1_response(ctx):
                 placeholder = chosen_question,
                 custom_id="text_input_response",
                 min_length=1,
-                max_length=200
+                max_length=100
             ),
         ],
     )
@@ -179,15 +235,12 @@ async def voting_menu_response(ctx, response):
 async def modal_response(ctx, response: str):
     index = guess_who_answered_votes.index(max(guess_who_answered_votes))
     chosen_question = guess_who_answered_questions[index]
-    line1 = "The chosen question was: {}\n".format(chosen_question)
+    line1 = "**The chosen question was:** {}\n".format(chosen_question)
     line2 = "And you answered: {}\n".format(response)
     line3 = "Waiting for others to answer...\n"
     global guess_who_answered_answers
-    guess_who_answered_answers.append(response)
-    if len(guess_who_answered_answers) == guess_who_answered_participants:
-        await ctx.send("Everyone answered, the answers were: " +  ", ".join(guess_who_answered_answers))
-    else:
-        await ctx.send(line1+line2+line3, ephemeral=True)
+    guess_who_answered_answers.append((ctx.author.name, response))
+    await ctx.send(line1+line2+line3, ephemeral=True)
 
 ########################## VoteWho ###########################
 #### GLOBAL VARIABLES ####
