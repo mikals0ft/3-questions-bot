@@ -41,18 +41,6 @@ async def questionbank(ctx: interactions.CommandContext, num_questions: int):
         top_n_questions = '\n'.join(random.sample(questions, num_questions))
         await ctx.send(top_n_questions)
 
-async def voteWho(self, ctx: interactions.CommandContext, *members: interactions.Member):
-    n = len(members)
-    if n > 10:
-        await ctx.send("Cannot play with more than 10 people")
-    else:
-        questions = random.sample(self.vote_who_questions, n)
-        print(members)
-        for question in questions:
-            await ctx.component(
-                view=interactions.SelectMenu(placeholder=question, options=[interactions.SelectOption(label=member.display_name, value=member.display_name) for member in members])
-            )
-
 
 @bot.command(
     name='openai_test', description='Calls OpenAi to generate questions',
@@ -64,8 +52,21 @@ async def openai_test(ctx: interactions.CommandContext):
         'role': 'user',
         'content': 'Generate 10 question for friends in a Discord server who already know each other well. The questions are funny and quirky. The questions should be answerable in 1-3 open-ended words. They are outputted in numbered list.',
     }
-    openai_response = openai.ChatCompletion.create(model=MODEL, temperature=0, messages=[prompt])
+    openai_response = openai.ChatCompletion.create(model=MODEL, temperature=1.0, messages=[prompt])
     openai_result = openai_response.choices[0].message.content
     await ctx.send(openai_result)
+
+
+async def voteWho(self, ctx: interactions.CommandContext, *members: interactions.Member):
+    n = len(members)
+    if n > 10:
+        await ctx.send("Cannot play with more than 10 people")
+    else:
+        questions = random.sample(self.vote_who_questions, n)
+        print(members)
+        for question in questions:
+            await ctx.component(
+                view=interactions.SelectMenu(placeholder=question, options=[interactions.SelectOption(label=member.display_name, value=member.display_name) for member in members])
+            )
 
 bot.start()
