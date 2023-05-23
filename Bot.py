@@ -213,13 +213,7 @@ vote_who_answers: Dict[Tuple[interactions.Snowflake, str], int] = defaultdict(la
 async def votewhoadd(ctx: interactions.CommandContext, member: interactions.Member):
     vote_who_members.add(member)
     await ctx.send(f"Added <@{member.user.id}> to the game")
-    # n = len(members)
-    # questions = random.sample(vote_who_questions, n)
-    # print(members)
-    # for question in questions:
-    #     await ctx.component(
-    #         view=interactions.SelectMenu(placeholder=question, options=[interactions.SelectOption(label=member.display_name, value=member.display_name) for member in members])
-    #     )
+
 
 @bot.component("vote_who")
 async def vote_who_response(ctx, response):
@@ -227,6 +221,7 @@ async def vote_who_response(ctx, response):
     vote_who_scores[user] += 1
     vote_who_answers[(ctx.message.id, user)] += 1
     await ctx.message.delete()
+
 
 @bot.command(
     name='votewhostartround', description='Start a round of the Vote Who game',
