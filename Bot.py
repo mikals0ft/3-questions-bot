@@ -4,7 +4,6 @@ import random
 
 import interactions
 import openai
-import asyncio
 from interactions import autodefer
 
 
