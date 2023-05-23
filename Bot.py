@@ -6,22 +6,14 @@ import interactions
 import openai
 from interactions import autodefer
 
-
 # Set up OpenAI
 MODEL = 'gpt-3-5-turbo-discord'
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-bot = interactions.Client(token='MTExMDMwOTQ1NTQ5NDY1NjAwMQ.GwpVfV.AnZN9ANJiO5CJrYzDJjYlLig5LK5AA_5azD_zw')
+bot = interactions.Client(token=os.getenv('BOT_TOKEN'))
 
 question_bank = open(os.path.dirname(__file__) + '/questions.txt')
 questions = question_bank.readlines()
-
-prompt = {
-    'role': 'user',
-    'content': 'Generate 1 question for friends in a Discord server who already know each other well. The questions are funny and quirky. The questions should be answerable in 1-3 open-ended words. They are outputted in numbered list.',
-}
-openai_response = openai.ChatCompletion.create(model=MODEL, temperature=0, messages=[prompt])
-openai_result = openai_response.choices[0].message.content
 
 @bot.command(
     name='hello_command', description='Just prints "hello"!',
@@ -55,6 +47,13 @@ async def questionbank(ctx: interactions.CommandContext, num_questions: int):
 )
 @autodefer()
 async def openai_test(ctx: interactions.CommandContext):
+    await ctx.defer()
+    prompt = {
+        'role': 'user',
+        'content': 'Generate 10 question for friends in a Discord server who already know each other well. The questions are funny and quirky. The questions should be answerable in 1-3 open-ended words. They are outputted in numbered list.',
+    }
+    openai_response = openai.ChatCompletion.create(model=MODEL, temperature=0, messages=[prompt])
+    openai_result = openai_response.choices[0].message.content
     await ctx.send(openai_result)
 
 bot.start()
