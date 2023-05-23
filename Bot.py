@@ -72,7 +72,7 @@ guess_who_answered_votes = []
 users_who_voted_already = []
 guess_who_answered_participants = 0
 guess_who_answered_questions = []
-guess_who_answered_answers = []
+guess_who_answered_answers = {}
 
 
 @bot.command(
@@ -113,7 +113,7 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
     guess_who_answered_participants = len(set(guess_who_answered_friends + [ctx.author.mention]))
 
     global guess_who_answered_answers
-    guess_who_answered_answers = []
+    guess_who_answered_answers = {}
     global guess_who_answered_votes
     guess_who_answered_votes = [0, 0, 0]
     global users_who_voted_already
@@ -140,15 +140,15 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
     )
     await ctx.send(line1 + line2 + line3 + line4 + line5, components=ActionRow.new(s1))
 
-    # Wait until all participants have voted or it's been 30 seconds.
+    # Wait until (all participants voted or there's only one participant) or until it's been 30 seconds.
     i = 0
-    while len(users_who_voted_already) < guess_who_answered_participants and i < 6:
+    while guess_who_answered_participants != len(users_who_voted_already) and i < 6:
         await asyncio.sleep(5)
         i += 1
     if i == 6:
         prefix = 'Time is up! \n\n'
     else:
-        prefix = 'Everyone voted! \n\n'
+        prefix = 'Votes are in! \n\n'
 
     index = guess_who_answered_votes.index(max(guess_who_answered_votes))
     chosen_question = guess_who_answered_questions[index]
@@ -162,8 +162,9 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
         components=ActionRow.new(b1),
     )
 
+    # Wait while (all participants have not voted and it has not been 60 seconds.
     i = 0
-    while len(guess_who_answered_answers) < guess_who_answered_participants and i < 12:
+    while guess_who_answered_participants != len(guess_who_answered_answers) and i < 12:
         await asyncio.sleep(5)
         i += 1
     if i == 12:
@@ -172,8 +173,8 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
         line1 = 'Everyone answered! \n'
     line2 = 'Now, can you guess who gave each answer? :mag: \n\n'
 
-    users = [t[0] for t in guess_who_answered_answers]
-    answers = [t[1] for t in guess_who_answered_answers]
+    users = list(guess_who_answered_answers.keys())
+    answers = list(guess_who_answered_answers.values())
     random.shuffle(users)
     random.shuffle(answers)
 
@@ -184,25 +185,32 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
     menus = []
     for answer in answers:
         options = []
-        the_user = ''
         for user in users:
-            if answer == guess_who_answered_answers[users.index(user)][1]:
+            if answer == guess_who_answered_answers[user]:
                 options.append(SelectOption(label=user, value='correct'))
-                the_user = user
             else:
                 options.append(SelectOption(label=user, value='incorrect'))
 
         s1 = SelectMenu(custom_id='guessing_menu', placeholder='Who wrote: "' + answer + '"?', options=options,)
         await ctx.send(answer, components=ActionRow.new(s1))
 
+# Map user to their score
+guess_who_answered_scores = {}
 
 @bot.component('guessing_menu')
 async def guessing_menu_response(ctx, response):
+    global guess_who_answered_scores
+    if ctx.author.mention not in guess_who_answered_scores:
+        guess_who_answered_scores[ctx.author.mention] = [0,0]
     if response[0] == 'correct':
-        await ctx.send(ctx.author.mention + ' answered correctly! :white_check_mark:')
+        guess_who_answered_scores[ctx.author.mention][0] += 1
     else:
-        await ctx.send(ctx.author.mention + ' answered incorrectly! :red_square:')
-
+        guess_who_answered_scores[ctx.author.mention][1] += 1
+    if guess_who_answered_scores[ctx.author.mention][0] + guess_who_answered_scores[ctx.author.mention][1] == len(guess_who_answered_answers):
+        message = "{} got {}/{} correct!".format(ctx.author.mention, guess_who_answered_scores[ctx.author.mention][0], len(guess_who_answered_answers))
+        await ctx.send(message)
+    else:
+        await ctx.send("Guess recorded!", ephemeral=True)
 
 @bot.component('b1')
 async def b1_response(ctx):
@@ -245,7 +253,7 @@ async def modal_response(ctx, response: str):
     line2 = 'And you answered: {}\n'.format(response)
     line3 = 'Waiting for others to answer...\n'
     global guess_who_answered_answers
-    guess_who_answered_answers.append((ctx.author.name, response))
+    guess_who_answered_answers[ctx.author.name] = response
     await ctx.send(line1 + line2 + line3, ephemeral=True)
 
 
