@@ -155,7 +155,7 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
         prefix
         + '**The chosen question was:** '
         + chosen_question
-        + '\nYou have up to 60 seconds to answer! \n\nPress this button to answer:',
+        + f'\nYou have up to {max_seconds_per_step} seconds to answer! \n\nPress this button to answer:',
         components=ActionRow.new(b1),
     )
 
