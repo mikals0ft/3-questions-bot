@@ -62,7 +62,7 @@ async def guess_who_addplayer(ctx: interactions.CommandContext, member: interact
     description='Vote on a question to get to know your friends better, then guess who answered what!',
 )
 async def guess_who_answered(ctx: interactions.CommandContext):
-    friends_str = ', '.join([u.user.username for u in list(guess_who_answered_friends)])
+    friends_str = ', '.join([f'<@{u.user.id}>' for u in list(guess_who_answered_friends)])
 
     current_user = ctx.author.mention
     guess_who_answered_participants = len(guess_who_answered_friends)
