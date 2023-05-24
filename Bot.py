@@ -124,7 +124,7 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
     global guess_who_answered_questions
     guess_who_answered_questions = random.sample(question_bank, 3)
     max_seconds_per_step = 30
-    game_instructions = f"Hey {friends_str}! {current_user} has invited you to play Guess Who Answered!\n\nHow well do YOU know your friends? :thinking:\n\nYou have up to {max_seconds_per_step} seconds to vote...\n\nVote on a question to answer:"
+    game_instructions = f"Hey {friends_str}! {current_user} has invited you to play Guess Who Answered!\n\nHow well do YOU know your friends? :thinking:\n\nYou have up to {max_seconds_per_step} seconds to vote on a question...\n\nVote on a question to answer:"
 
     s1 = SelectMenu(
         custom_id='voting_menu',
