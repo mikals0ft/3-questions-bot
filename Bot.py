@@ -76,8 +76,8 @@ guess_who_answered_answers = {}
 
 
 @bot.command(
-    name='guess_who_answered',
-    description='Everyone answers a question, then you guess who put each answer!',
+    name='guesswho',
+    description='Vote on a question to get to know your friends better, then guess who answered what!',
     options=[
         interactions.Option(
             name='friend1',
@@ -110,7 +110,8 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
         guess_who_answered_friends.append(str(friend3))
     friends_str = ', '.join(guess_who_answered_friends)
 
-    guess_who_answered_participants = len(set(guess_who_answered_friends + [ctx.author.mention]))
+    current_user = ctx.author.mention
+    guess_who_answered_participants = len(set(guess_who_answered_friends))
 
     global guess_who_answered_answers
     guess_who_answered_answers = {}
@@ -121,31 +122,26 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
 
     global guess_who_answered_questions
     guess_who_answered_questions = random.sample(question_bank, 3)
-    line1 = 'Hey {}! {} has invited you to play Guess Who Answered!\n\n'.format(friends_str, ctx.author.mention)
-    line2 = 'How well do YOU know your friends? :thinking:\n\n'
-    line3 = 'Vote on a question to answer:\n'
-    line4 = ' :one: {} \n :two: {} \n :three: {}\n'.format(
-        guess_who_answered_questions[0], guess_who_answered_questions[1], guess_who_answered_questions[2]
-    )
-    line5 = 'You have up to {} seconds to vote...\n'.format(30)
+    max_seconds_per_step = 30
+    game_instructions = f"Hey {friends_str}! {current_user} has invited you to play Guess Who Answered!\n\nHow well do YOU know your friends? :thinking:\n\nYou have up to {max_seconds_per_step} seconds to vote...\n\nVote on a question to answer:"
 
     s1 = SelectMenu(
         custom_id='voting_menu',
         placeholder='Select a question to vote for',
         options=[
-            SelectOption(label='1', value='1'),
-            SelectOption(label='2', value='2'),
-            SelectOption(label='3', value='3'),
+            SelectOption(label=question, value=i) for i, question in enumerate(guess_who_answered_questions)
         ],
     )
-    await ctx.send(line1 + line2 + line3 + line4 + line5, components=ActionRow.new(s1))
+    await ctx.send(game_instructions, components=ActionRow.new(s1))
 
     # Wait until (all participants voted or there's only one participant) or until it's been 30 seconds.
     i = 0
-    while guess_who_answered_participants != len(users_who_voted_already) and i < 6:
-        await asyncio.sleep(5)
+    while i < max_seconds_per_step:
+        if guess_who_answered_participants == len(users_who_voted_already):
+            break
+        await asyncio.sleep(1)
         i += 1
-    if i == 6:
+    if i == max_seconds_per_step:
         prefix = 'Time is up! \n\n'
     else:
         prefix = 'Votes are in! \n\n'
@@ -162,12 +158,14 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
         components=ActionRow.new(b1),
     )
 
-    # Wait while (all participants have not voted and it has not been 60 seconds.
+    # Wait while (all participants have not voted and it has not been 30 seconds.
     i = 0
-    while guess_who_answered_participants != len(guess_who_answered_answers) and i < 12:
+    while i < max_seconds_per_step:
+        if guess_who_answered_participants == len(guess_who_answered_answers):
+            break
         await asyncio.sleep(5)
         i += 1
-    if i == 12:
+    if i == max_seconds_per_step:
         line1 = 'Time is up! \n'
     else:
         line1 = 'Everyone answered! \n'
@@ -178,11 +176,6 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
     random.shuffle(users)
     random.shuffle(answers)
 
-    line3 = 'The answers:\n - ' + '\n- '.join(answers)
-    line4 = '\n\nPeople who answered:\n- ' + '\n- '.join(users)
-    await ctx.send(line1 + line2 + line3 + line4)
-
-    menus = []
     for answer in answers:
         options = []
         for user in users:
@@ -191,8 +184,8 @@ async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = ''
             else:
                 options.append(SelectOption(label=user, value='incorrect'))
 
-        s1 = SelectMenu(custom_id='guessing_menu', placeholder='Who wrote: "' + answer + '"?', options=options,)
-        await ctx.send(answer, components=ActionRow.new(s1))
+        s1 = SelectMenu(custom_id=f'guessing_menu', placeholder='Who answered: "' + answer + '"?', options=options)
+        await ctx.send(f"Select who answered: {answer}", components=ActionRow.new(s1))
 
 # Map user to their score
 guess_who_answered_scores = {}
@@ -238,10 +231,12 @@ async def voting_menu_response(ctx, response):
     if ctx.author.id in users_who_voted_already:
         await ctx.send('Uhh, you already voted :no_mouth:')
         return
+    
     users_who_voted_already.append(ctx.author.id)
-    guess_who_answered_votes[int(response[0]) - 1] += 1
+    chosen_idx = int(response[0])
+    guess_who_answered_votes[chosen_idx] += 1
 
-    line1 = 'You voted for Question {} \n'.format(response[0])
+    line1 = 'You voted for: {} \n'.format(guess_who_answered_questions[chosen_idx])
     await ctx.send(line1, ephemeral=True)
 
 
