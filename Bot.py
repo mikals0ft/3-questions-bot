@@ -7,6 +7,7 @@ from typing import Dict, List, Set, Tuple
 import interactions
 import openai
 from interactions import ActionRow, Button, SelectMenu, SelectOption
+from crontab import CronTab
 
 # Set up OpenAI
 MODEL = 'gpt-3-5-turbo-discord'
@@ -345,6 +346,71 @@ async def votewhoendgame(ctx: interactions.CommandContext):
     vote_who_scores.clear()
     vote_who_mappings.clear()
     vote_who_answers.clear()
+
+
+########################## QOTD ###########################
+#### GLOBAL VARIABLES ####
+
+
+import asyncio
+from contextlib import suppress
+
+
+class Periodic:
+    def __init__(self, func):
+        self.func = func
+        self.is_started = False
+        self._task = None
+
+    async def start(self, ctx, time):
+        if not self.is_started:
+            self.is_started = True
+            # Start task to call func periodically:
+            self._task = asyncio.ensure_future(self._run(ctx, time))
+
+    async def stop(self):
+        if self.is_started:
+            self.is_started = False
+            # Stop task and await it stopped:
+            self._task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._task
+
+    async def _run(self, ctx, time):
+        while True:
+            await self.func(ctx)
+            await asyncio.sleep(time * 60)
+
+
+async def schedule_question(ctx: interactions.CommandContext):
+    question = random.sample(question_bank, 1)[0]
+    message = await ctx.send(question)
+    await message.create_thread(question)
+
+schedule = Periodic(func=schedule_question)
+
+
+@bot.command(
+    name='qotd_start', description='Enable the bot to ask a question and create a thread for server members to discuss',
+    options=[
+        interactions.Option(
+            name='mins',
+            description='frequency in which the bot creates the question thread',
+            type=interactions.OptionType.INTEGER,
+            required=True,
+        ),
+    ],
+)
+async def qotd_start(ctx: interactions.CommandContext, mins: int):
+    await ctx.send(f"I will create a question thread in this channel every {mins} minutes")
+    await schedule.start(ctx, mins)
+
+@bot.command(
+    name='qotd_end', description='Stop bot from sending questions'
+)
+async def qotd_start(ctx: interactions.CommandContext):
+    await ctx.send(f"I will no longer create question threads in this channel")
+    await schedule.stop()
 
 
 bot.start()
