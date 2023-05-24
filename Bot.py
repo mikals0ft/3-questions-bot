@@ -393,7 +393,7 @@ async def qotd_start(ctx: interactions.CommandContext, mins: int):
 @bot.command(
     name='qotd_end', description='Stop bot from sending questions'
 )
-async def qotd_start(ctx: interactions.CommandContext):
+async def qotd_end(ctx: interactions.CommandContext):
     await ctx.send(f"I will no longer create question threads in this channel")
     await schedule.stop()
 
