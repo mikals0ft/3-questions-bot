@@ -102,7 +102,6 @@ async def guess_who_answered(ctx: interactions.CommandContext):
 
     current_user = ctx.author.mention
     guess_who_answered_participants = len(guess_who_answered_friends)
-    print(friends_str)
 
     global guess_who_answered_answers
     guess_who_answered_answers = {}
