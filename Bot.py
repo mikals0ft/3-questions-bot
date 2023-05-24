@@ -254,11 +254,11 @@ async def vote_who_response(ctx, response):
     vote_who_scores[user] += 1
     vote_who_answers[(ctx.message.id, user)] += 1
     question = vote_who_mappings[ctx.message.id]
-    await ctx.send(f'For question "{question}", you voted for {user}.', ephemeral=True)
+    await ctx.send(f'For question "{question}" you voted for {user}.', ephemeral=True)
 
 
 @bot.command(
-    name='mostlikely_startround', description="'Most Likely' is a game where you vote which friend matches a question best!",
+    name='mostlikely_start', description="'Most Likely' is a game where you vote which friend matches a question best!",
 )
 async def votewhoplay(ctx: interactions.CommandContext):
     global vote_who_members
