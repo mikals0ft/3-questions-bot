@@ -302,9 +302,10 @@ async def votewhostartround(ctx: interactions.CommandContext):
         await ctx.send('Cannot play with more than 10 people')
     else:
         questions = random.sample(vote_who_questions, n)
-        await ctx.send('You have 30 seconds to vote for each question!')
+        await ctx.send('You have 20 seconds to vote for each question!')
         for question in questions:
             message = await ctx.send(
+                question,
                 components=interactions.SelectMenu(
                     custom_id='vote_who',
                     placeholder=question,
@@ -315,7 +316,7 @@ async def votewhostartround(ctx: interactions.CommandContext):
                 )
             )
             vote_who_mappings[message.id] = question
-        await asyncio.sleep(20)
+        await asyncio.sleep(10)
         await ctx.send('You have 10 seconds left to vote for each question!')
         await asyncio.sleep(10)
 
