@@ -305,18 +305,19 @@ async def votewhoplay(ctx: interactions.CommandContext):
             await message.edit(content=f'You have {30 - i} seconds left to vote for each question!')
         
         vote_who_dict: Dict[interactions.Snowflake, List[str]] = defaultdict(lambda: [])
-        for (q, u), c in vote_who_answers.items():
+        vote_who_answers_sorted = dict(sorted(vote_who_answers.items(), key=lambda x: x[1], reverse=True))
+        for (q, u), c in vote_who_answers_sorted.items():
             vote_who_dict[q].append(f'{u} got {c} vote(s)')
         vote_who_list: List[Tuple[interactions.Snowflake, str]] = [
             (question, '\n'.join(scores)) for question, scores in vote_who_dict.items()
         ]
         
         if vote_who_list == []:
-            await ctx.send("The time is up and no one voted :frowning: \n\n Want to play another round? Just run: /mostlikely_startround\n")
+            await ctx.send("The time is up and no one voted :frowning: \n\n Want to play another round? Just run: /mostlikely_start\n")
             return
 
-        vote_who_answers_formatted = '\n\n'.join([f'{vote_who_mappings[q]}\n{a}' for q, a in vote_who_list])
-        await ctx.send(f'The votes are in! :tada: \n\n{vote_who_answers_formatted}\n\n Want to play another round? Just run: /mostlikely_startround\n')
+        vote_who_answers_formatted = '\n\n'.join([f'**{vote_who_mappings[q]}**\n{a}' for q, a in vote_who_list])
+        await ctx.send(f'The votes are in! :tada: \n\n{vote_who_answers_formatted}\n\n Want to play another round? Just run: /mostlikely_start\n')
         vote_who_scores_formatted = '\n'.join([f'{u}: {s}' for u, s in vote_who_scores.items()])
         #await ctx.send(f'Here \n {vote_who_scores_formatted}')
 
