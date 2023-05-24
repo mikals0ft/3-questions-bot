@@ -74,45 +74,35 @@ users_who_voted_already = []
 guess_who_answered_participants = 0
 guess_who_answered_questions = []
 guess_who_answered_answers = {}
+guess_who_answered_friends: Set[interactions.Member] = set()
 
+
+@bot.command(
+    name='guesswho_addplayer',
+    description='Add user to Guess Who game',
+    options=[
+        interactions.Option(
+            name='member',
+            description='users to add to the game',
+            type=interactions.OptionType.MENTIONABLE,
+            required=True,
+        ),
+    ],
+)
+async def guess_who_addplayer(ctx: interactions.CommandContext, member: interactions.Member):
+    guess_who_answered_friends.add(member)
+    await ctx.send(f'Added <@{member.user.id}> to the game')
 
 @bot.command(
     name='guesswho',
     description='Vote on a question to get to know your friends better, then guess who answered what!',
-    options=[
-        interactions.Option(
-            name='friend1',
-            description='Optionally invite some friends to join',
-            type=interactions.OptionType.STRING,
-            required=False,
-        ),
-        interactions.Option(
-            name='friend2',
-            description='Optionally invite some friends to join',
-            type=interactions.OptionType.STRING,
-            required=False,
-        ),
-        interactions.Option(
-            name='friend3',
-            description='Optionally invite some friends to join',
-            type=interactions.OptionType.STRING,
-            required=False,
-        ),
-    ],
 )
-async def guess_who_answered(ctx: interactions.CommandContext, friend1: str = '', friend2: str = '', friend3: str = ''):
-    global guess_who_answered_participants
-    guess_who_answered_friends = []
-    if friend1:
-        guess_who_answered_friends.append(str(friend1))
-    if friend2:
-        guess_who_answered_friends.append(str(friend2))
-    if friend3:
-        guess_who_answered_friends.append(str(friend3))
-    friends_str = ', '.join(guess_who_answered_friends)
+async def guess_who_answered(ctx: interactions.CommandContext):
+    friends_str = ', '.join([u.user.username for u in list(guess_who_answered_friends)])
 
     current_user = ctx.author.mention
-    guess_who_answered_participants = len(set(guess_who_answered_friends))
+    guess_who_answered_participants = len(guess_who_answered_friends)
+    print(friends_str)
 
     global guess_who_answered_answers
     guess_who_answered_answers = {}
