@@ -15,7 +15,8 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 bot = interactions.Client(token=os.getenv('BOT_TOKEN'))
 
-question_bank_file = open(os.path.dirname(__file__) + '/questions.txt')
+question_bank_file = open('questions.txt')
+# question_bank_file = open(os.path.dirname(__file__) + '/questions.txt')
 question_bank = question_bank_file.readlines()
 
 
@@ -255,7 +256,8 @@ async def modal_response(ctx, response: str):
 
 ########################## VoteWho ###########################
 #### GLOBAL VARIABLES ####
-vwqf = open(os.path.dirname(__file__) + '/vote_who.txt')
+vwqf = open('vote_who.txt')
+# vwqf = open(os.path.dirname(__file__) + '/vote_who.txt')
 vote_who_questions = vwqf.readlines()
 vote_who_members: Set[interactions.Member] = set()
 vote_who_scores: Dict[str, int] = defaultdict(lambda: 0)
